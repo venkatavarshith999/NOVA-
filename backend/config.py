@@ -35,7 +35,11 @@ class Settings(BaseSettings):
     VECTOR_STORE_DIR: str = os.getenv("VECTOR_STORE_DIR", "./storage/vectors")
 
     # CORS
-    CORS_ORIGINS: list[str] = ["http://localhost:5173", "http://localhost:3000", "*"]
+    CORS_ORIGINS: list[str] = [
+        "http://localhost:5173", 
+        "http://localhost:3000", 
+        "https://nova-3ghkln2xo-venkatavarshith999s-projects.vercel.app"
+    ]
 
     class Config:
         env_file = ".env"

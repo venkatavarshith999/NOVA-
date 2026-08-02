@@ -6,6 +6,7 @@ interface AuthState {
   user: User | null;
   isAuthenticated: boolean;
   setAuth: (token: string, user: User) => void;
+  updateUser: (user: User) => void;
   clearAuth: () => void;
 }
 
@@ -20,6 +21,10 @@ export const useAuthStore = create<AuthState>((set) => ({
     localStorage.setItem("nova_token", token);
     localStorage.setItem("nova_user", JSON.stringify(user));
     set({ token, user, isAuthenticated: true });
+  },
+  updateUser: (user) => {
+    localStorage.setItem("nova_user", JSON.stringify(user));
+    set({ user });
   },
   clearAuth: () => {
     localStorage.removeItem("nova_token");

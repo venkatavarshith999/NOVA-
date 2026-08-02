@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { User, Palette, History, Bookmark, Bell, Cpu } from "lucide-react";
+import { User, Palette, History, Bookmark, Bell, Cpu, Webhook } from "lucide-react";
 import { useAuthStore } from "../store/authStore";
-import { ragApi } from "../lib/api";
+import { ragApi, authApi } from "../lib/api";
 import ConfidenceMeter from "../components/ConfidenceMeter";
 import { formatRelativeTime, initials, cn } from "../lib/utils";
 
@@ -12,6 +12,7 @@ const TABS = [
   { id: "history", label: "History", icon: History },
   { id: "bookmarks", label: "Bookmarks", icon: Bookmark },
   { id: "notifications", label: "Notifications", icon: Bell },
+  { id: "automations", label: "Automations", icon: Webhook },
   { id: "model", label: "AI Model", icon: Cpu },
 ];
 
@@ -138,6 +139,45 @@ export default function Settings() {
                   <input type="checkbox" defaultChecked className="accent-violet-500 w-4 h-4" />
                 </label>
               ))}
+            </div>
+          )}
+
+          {tab === "automations" && (
+            <div className="card space-y-5 max-w-lg">
+              <div>
+                <h3 className="font-medium text-lg mb-1 flex items-center gap-2">
+                  <Webhook size={18} className="text-violet-400" /> n8n Integration
+                </h3>
+                <p className="text-sm text-slate-400">
+                  Connect your n8n cloud workflows. Nova AI will automatically trigger this webhook 
+                  when important events occur (e.g., a Compliance Report is generated), sending the 
+                  full data payload directly to your automation workflow.
+                </p>
+              </div>
+              <div>
+                <label className="text-xs text-slate-400 mb-1.5 block">Webhook URL</label>
+                <input 
+                  id="n8n_webhook"
+                  className="input-field font-mono text-sm" 
+                  placeholder="https://your-instance.n8n.cloud/webhook/..."
+                  defaultValue={user?.n8n_webhook_url || ""}
+                />
+              </div>
+              <button 
+                className="btn-primary text-sm"
+                onClick={async () => {
+                  const url = (document.getElementById("n8n_webhook") as HTMLInputElement).value;
+                  try {
+                    const res = await authApi.updateProfile({ n8n_webhook_url: url });
+                    useAuthStore.getState().updateUser(res.data);
+                    alert("Webhook saved successfully! Nova AI will now send report events to this URL.");
+                  } catch (e) {
+                    alert("Failed to save webhook");
+                  }
+                }}
+              >
+                Save Integration
+              </button>
             </div>
           )}
 

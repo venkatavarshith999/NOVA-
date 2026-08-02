@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 
 from database import get_db
 from models.models import User
-from schemas.schemas import SignupRequest, LoginRequest, TokenResponse, UserOut
+from schemas.schemas import SignupRequest, LoginRequest, TokenResponse, UserOut, UserUpdate
 from auth.security import hash_password, verify_password, create_access_token, get_current_user
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
@@ -48,6 +48,18 @@ def logout(user: User = Depends(get_current_user)):
 
 @router.get("/me", response_model=UserOut)
 def me(user: User = Depends(get_current_user)):
+    return UserOut.model_validate(user)
+
+
+@router.put("/profile", response_model=UserOut)
+def update_profile(payload: UserUpdate, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    if payload.full_name is not None:
+        user.full_name = payload.full_name
+    if payload.n8n_webhook_url is not None:
+        user.n8n_webhook_url = payload.n8n_webhook_url
+    
+    db.commit()
+    db.refresh(user)
     return UserOut.model_validate(user)
 
 

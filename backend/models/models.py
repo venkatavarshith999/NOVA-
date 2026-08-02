@@ -19,6 +19,7 @@ class User(Base):
     full_name = Column(String, nullable=False)
     hashed_password = Column(String, nullable=False)
     role = Column(String, default="analyst")  # admin | analyst | viewer
+    n8n_webhook_url = Column(String, nullable=True)
     created_at = Column(DateTime, default=dt.datetime.utcnow)
 
     documents = relationship("Document", back_populates="owner", cascade="all, delete-orphan")

@@ -11,7 +11,7 @@ import datetime as dt
 import logging
 from typing import List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 
@@ -363,8 +363,16 @@ def _build_citations(docs, chunks_by_doc) -> list:
     return citations
 
 
+def send_n8n_webhook(url: str, payload: dict):
+    try:
+        import requests
+        resp = requests.post(url, json=payload, timeout=10)
+        logger.info(f"n8n webhook fired to {url}: {resp.status_code}")
+    except Exception as e:
+        logger.error(f"Failed to fire n8n webhook to {url}: {e}")
+
 @router.post("/reports/generate", response_model=ReportOut, status_code=201)
-async def generate_report(payload: ReportGenerateRequest, user: User = Depends(get_current_user),
+async def generate_report(payload: ReportGenerateRequest, background_tasks: BackgroundTasks, user: User = Depends(get_current_user),
                      db: Session = Depends(get_db)):
     g = build_graph_for_user(db, user.id, payload.document_ids)
     risks = detect_compliance_risks(g)
@@ -521,6 +529,20 @@ async def generate_report(payload: ReportGenerateRequest, user: User = Depends(g
     db.add(report)
     db.commit()
     db.refresh(report)
+
+    # Trigger n8n Webhook if configured
+    if user.n8n_webhook_url:
+        webhook_payload = {
+            "event": "report_generated",
+            "report_id": report.id,
+            "title": report.title,
+            "risk_level": risk_level,
+            "compliance_score": compliance_score,
+            "high_risks": high_count,
+            "summary": summary
+        }
+        background_tasks.add_task(send_n8n_webhook, user.n8n_webhook_url, webhook_payload)
+
     return ReportOut.model_validate(report)
 
 

@@ -26,9 +26,14 @@ class UserOut(BaseModel):
     email: str
     full_name: str
     role: str
+    n8n_webhook_url: Optional[str] = None
 
     class Config:
         from_attributes = True
+
+class UserUpdate(BaseModel):
+    full_name: Optional[str] = None
+    n8n_webhook_url: Optional[str] = None
 
 
 # ---------- Documents ----------

@@ -31,6 +31,7 @@ export interface User {
   email: string;
   full_name: string;
   role: string;
+  n8n_webhook_url?: string;
 }
 
 export interface DocumentItem {
@@ -202,6 +203,8 @@ export const authApi = {
   login: (data: { email: string; password: string }) =>
     api.post<{ access_token: string; user: User }>("/api/auth/login", data),
   me: () => api.get<User>("/api/auth/me"),
+  updateProfile: (data: { full_name?: string; n8n_webhook_url?: string }) =>
+    api.put<User>("/api/auth/profile", data),
 };
 
 export const documentsApi = {

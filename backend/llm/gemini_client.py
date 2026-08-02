@@ -58,7 +58,22 @@ async def embed_text(text: str) -> List[float]:
 
 
 def extract_json(raw: str) -> dict:
-    """Gemini sometimes wraps JSON in markdown fences; strip them safely."""
+    """Gemini sometimes wraps JSON in markdown fences or adds conversational text."""
+    try:
+        # First try parsing it directly
+        return json.loads(raw)
+    except Exception:
+        pass
+    
+    # Extract just the JSON part
+    match = re.search(r'(\{.*\}|\[.*\])', raw, re.DOTALL)
+    if match:
+        try:
+            return json.loads(match.group(1))
+        except Exception:
+            pass
+            
+    # Fallback to the old strip method
     cleaned = raw.strip()
     cleaned = re.sub(r"^```json\s*|^```\s*|```$", "", cleaned, flags=re.MULTILINE).strip()
     return json.loads(cleaned)

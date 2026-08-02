@@ -24,10 +24,41 @@ Allowed relationship types: {", ".join(ALLOWED_RELATIONS)}
 Rules:
 - Only extract entities and relationships that are explicitly supported by the text.
 - Never invent facts not present in the excerpt.
-- Return strict JSON only, matching this schema:
-{{"entities": [{{"name": str, "type": str, "description": str}}],
-  "relationships": [{{"source": str, "target": str, "relation": str, "confidence": number between 0 and 1}}]}}
+- Ensure all double quotes inside strings are properly escaped to prevent invalid JSON formatting.
+- Do NOT include markdown fences, just output the raw JSON object.
 """
+
+GRAPH_SCHEMA = {
+    "type": "OBJECT",
+    "properties": {
+        "entities": {
+            "type": "ARRAY",
+            "items": {
+                "type": "OBJECT",
+                "properties": {
+                    "name": {"type": "STRING"},
+                    "type": {"type": "STRING"},
+                    "description": {"type": "STRING"}
+                },
+                "required": ["name", "type", "description"]
+            }
+        },
+        "relationships": {
+            "type": "ARRAY",
+            "items": {
+                "type": "OBJECT",
+                "properties": {
+                    "source": {"type": "STRING"},
+                    "target": {"type": "STRING"},
+                    "relation": {"type": "STRING"},
+                    "confidence": {"type": "NUMBER"}
+                },
+                "required": ["source", "target", "relation", "confidence"]
+            }
+        }
+    },
+    "required": ["entities", "relationships"]
+}
 
 
 async def extract_entities_relationships(chunk_text: str) -> Dict[str, List[dict]]:
@@ -38,6 +69,7 @@ async def extract_entities_relationships(chunk_text: str) -> Dict[str, List[dict
             system_instruction=EXTRACTION_SYSTEM_PROMPT,
             json_mode=True,
             temperature=0.1,
+            response_schema=GRAPH_SCHEMA
         )
         parsed = extract_json(raw)
         entities = parsed.get("entities", [])

@@ -19,7 +19,8 @@ class GeminiError(Exception):
 
 
 async def generate_content(prompt: str, system_instruction: Optional[str] = None,
-                            json_mode: bool = False, temperature: float = 0.2, api_key: Optional[str] = None) -> str:
+                            json_mode: bool = False, temperature: float = 0.2, api_key: Optional[str] = None,
+                            response_schema: Optional[dict] = None) -> str:
     key_to_use = api_key or settings.GEMINI_API_KEY
     if not key_to_use:
         raise GeminiError("GEMINI_API_KEY not configured and no api_key provided")
@@ -31,6 +32,8 @@ async def generate_content(prompt: str, system_instruction: Optional[str] = None
     }
     if json_mode:
         body["generationConfig"]["responseMimeType"] = "application/json"
+        if response_schema:
+            body["generationConfig"]["responseSchema"] = response_schema
     if system_instruction:
         body["systemInstruction"] = {"parts": [{"text": system_instruction}]}
 

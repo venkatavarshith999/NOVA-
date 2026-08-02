@@ -9,6 +9,8 @@ from fastapi.exceptions import RequestValidationError
 
 from config import get_settings
 from database import Base, engine
+from sqlalchemy import text
+from sqlalchemy.exc import ProgrammingError
 from routers import auth, documents, graph, rag_router, analytics, compliance
 
 logging.basicConfig(level=logging.INFO)
@@ -31,6 +33,21 @@ async def lifespan(app: FastAPI):
         sys.exit(1)
         
     logger.info("API Keys validated successfully. Nova AI is ready.")
+
+    # Apply database migrations manually for n8n_webhook_url
+    try:
+        with engine.begin() as conn:
+            if engine.dialect.name == 'sqlite':
+                conn.execute(text("ALTER TABLE users ADD COLUMN n8n_webhook_url VARCHAR"))
+            else:
+                conn.execute(text("ALTER TABLE users ADD COLUMN n8n_webhook_url VARCHAR"))
+            logger.info("Successfully added n8n_webhook_url column to users table.")
+    except ProgrammingError as e:
+        # Column already exists or table doesn't exist yet
+        logger.info("DB Migration skipped: column might already exist.")
+    except Exception as e:
+        logger.error(f"Error applying migration: {e}")
+
     yield
 
 app = FastAPI(

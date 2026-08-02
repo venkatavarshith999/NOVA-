@@ -15,7 +15,8 @@ logging.basicConfig(level=logging.INFO)
 settings = get_settings()
 
 os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
-os.makedirs(os.path.dirname(settings.DATABASE_URL.replace("sqlite:///", "")) or ".", exist_ok=True)
+if settings.DATABASE_URL.startswith("sqlite"):
+    os.makedirs(os.path.dirname(settings.DATABASE_URL.replace("sqlite:///", "")) or ".", exist_ok=True)
 
 Base.metadata.create_all(bind=engine)
 

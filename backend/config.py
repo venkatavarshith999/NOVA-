@@ -38,7 +38,8 @@ class Settings(BaseSettings):
     CORS_ORIGINS: list[str] = [
         "http://localhost:5173", 
         "http://localhost:3000", 
-        "https://nova-3ghkln2xo-venkatavarshith999s-projects.vercel.app"
+        "https://nova-3ghkln2xo-venkatavarshith999s-projects.vercel.app",
+        "https://nova-frontend-7m3b.onrender.com"
     ]
 
     class Config:

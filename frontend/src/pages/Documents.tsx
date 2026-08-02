@@ -223,6 +223,9 @@ function DocRow({
             <div className="h-full bg-nova-gradient transition-all duration-500" style={{ width: `${doc.progress}%` }} />
           </div>
         )}
+        {doc.status === "failed" && doc.error_message && (
+          <p className="text-xs text-coral-400/80 mt-1.5">{doc.error_message}</p>
+        )}
       </div>
       <div className="flex items-center gap-1 shrink-0">
         {isProcessing && <Loader2 size={14} className="animate-spin text-violet-400" />}

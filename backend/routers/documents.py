@@ -85,26 +85,30 @@ async def process_document(document_id: str, user_id: str):
         # Cap the number of chunks sent for entity extraction to keep processing snappy
         sample_chunks = chunk_rows[:40]
         for row in sample_chunks:
-            result = await extract_entities_relationships(row.text)
-            local_names = set()
-            for e in result.get("entities", []):
-                name = str(e.get("name", "")).strip()
-                if not name or len(name) < 2:
-                    continue
-                ent = Entity(document_id=doc.id, name=name, type=e.get("type", "Entity"),
-                             description=e.get("description", "")[:500], source_chunk_id=row.id)
-                db.add(ent)
-                local_names.add(name)
-                entity_count += 1
-            for r in result.get("relationships", []):
-                src, tgt = str(r.get("source", "")).strip(), str(r.get("target", "")).strip()
-                if not src or not tgt:
-                    continue
-                rel = Relationship(document_id=doc.id, source_entity=src, target_entity=tgt,
-                                    relation_type=r.get("relation", "linked_to"),
-                                    source_chunk_id=row.id, confidence=float(r.get("confidence", 0.75)))
-                db.add(rel)
-                rel_count += 1
+            try:
+                result = await extract_entities_relationships(row.text)
+                local_names = set()
+                for e in result.get("entities", []):
+                    name = str(e.get("name", "")).strip()
+                    if not name or len(name) < 2:
+                        continue
+                    ent = Entity(document_id=doc.id, name=name, type=e.get("type", "Entity"),
+                                 description=e.get("description", "")[:500], source_chunk_id=row.id)
+                    db.add(ent)
+                    local_names.add(name)
+                    entity_count += 1
+                for r in result.get("relationships", []):
+                    src, tgt = str(r.get("source", "")).strip(), str(r.get("target", "")).strip()
+                    if not src or not tgt:
+                        continue
+                    rel = Relationship(document_id=doc.id, source_entity=src, target_entity=tgt,
+                                        relation_type=r.get("relation", "linked_to"),
+                                        source_chunk_id=row.id, confidence=float(r.get("confidence", 0.75)))
+                    db.add(rel)
+                    rel_count += 1
+            except Exception as ex:
+                logger.warning(f"Skipping chunk {row.id} due to extraction error: {ex}")
+                continue
         doc.entity_count = entity_count
         doc.relationship_count = rel_count
         doc.status = "building_graph"; doc.progress = 90

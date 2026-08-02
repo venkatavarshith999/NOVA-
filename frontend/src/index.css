@@ -1,0 +1,72 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    @apply border-void-600/40;
+  }
+  html {
+    scroll-behavior: smooth;
+  }
+  body {
+    @apply bg-void-900 text-slate-100 font-body antialiased;
+    background-image: radial-gradient(ellipse 80% 50% at 50% -10%, rgba(124,58,237,0.18), transparent),
+                       radial-gradient(ellipse 60% 40% at 90% 10%, rgba(59,130,246,0.12), transparent);
+    background-attachment: fixed;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-display;
+  }
+  ::selection {
+    @apply bg-violet-500/40 text-white;
+  }
+  :focus-visible {
+    outline: 2px solid #a78bfa;
+    outline-offset: 2px;
+  }
+}
+
+@layer components {
+  .glass {
+    @apply bg-white/[0.04] backdrop-blur-xl border border-white/[0.08];
+  }
+  .glass-hover {
+    @apply hover:bg-white/[0.06] hover:border-white/[0.14] transition-all duration-200;
+  }
+  .text-gradient {
+    @apply bg-nova-gradient bg-clip-text text-transparent;
+  }
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl bg-nova-gradient px-5 py-2.5 font-medium text-white shadow-glow hover:brightness-110 active:brightness-95 transition-all duration-200 disabled:opacity-50 disabled:pointer-events-none;
+  }
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl glass glass-hover px-5 py-2.5 font-medium text-slate-100 transition-all duration-200 disabled:opacity-50 disabled:pointer-events-none;
+  }
+  .input-field {
+    @apply w-full rounded-lg bg-void-800/80 border border-white/10 px-4 py-2.5 text-sm text-slate-100 placeholder:text-slate-500 focus:border-violet-500/60 focus:ring-1 focus:ring-violet-500/40 outline-none transition-colors;
+  }
+  .card {
+    @apply glass rounded-2xl p-6;
+  }
+  .scrollbar-thin::-webkit-scrollbar { width: 6px; height: 6px; }
+  .scrollbar-thin::-webkit-scrollbar-thumb { @apply bg-void-600 rounded-full; }
+  .scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
+}
+
+@layer utilities {
+  .animate-skeleton {
+    animation: skeleton 1.5s ease-in-out infinite alternate;
+  }
+  @keyframes skeleton {
+    0% { opacity: 0.4; }
+    100% { opacity: 1; }
+  }
+  .animate-glow-pulse {
+    animation: glowPulse 2s ease-in-out infinite;
+  }
+  @keyframes glowPulse {
+    0%, 100% { box-shadow: 0 0 10px rgba(167, 139, 250, 0.4); }
+    50% { box-shadow: 0 0 25px rgba(167, 139, 250, 0.8); }
+  }
+}

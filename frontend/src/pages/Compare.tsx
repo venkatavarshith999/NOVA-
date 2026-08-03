@@ -59,7 +59,6 @@ function DocPanel({
   unique: Array<{ name: string; type: string }>;
   side: "A" | "B";
 }) {
-  const accentColor = side === "A" ? "violet" : "cyan";
   const textColor = side === "A" ? "text-violet-400" : "text-cyan-400";
   const borderColor = side === "A" ? "border-violet-500/30" : "border-cyan-500/30";
   const bgColor = side === "A" ? "bg-violet-500/5" : "bg-cyan-500/5";

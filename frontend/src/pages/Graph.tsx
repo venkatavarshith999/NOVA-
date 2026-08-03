@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import ReactFlow, {
   Background,
@@ -26,7 +26,7 @@ import {
   Layers, Clock, BookOpen, ChevronDown, Info, Eye,
 } from "lucide-react";
 import { graphApi, complianceApi, type GraphNode as GNode, type ImpactAnalysisResponse } from "../lib/api";
-import { entityColor, cn, ENTITY_COLORS } from "../lib/utils";
+import { entityColor, cn } from "../lib/utils";
 
 // ─── Entity Type Icons ─────────────────────────────────────────────────────────
 const TYPE_ICONS: Record<string, React.ElementType> = {
@@ -134,7 +134,7 @@ const nodeTypes = { entityNode: EntityNode };
 // ─── Force-Directed Layout ─────────────────────────────────────────────────────
 function computeLayout(
   rawNodes: GNode[],
-  rawEdges: { source: string; target: string }[],
+  _rawEdges: { source: string; target: string }[],
   highlightedIds: Set<string>,
   highlightColors: Map<string, string>,
   searchTerm: string

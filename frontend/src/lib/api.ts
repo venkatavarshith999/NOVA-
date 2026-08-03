@@ -34,6 +34,13 @@ export interface User {
   n8n_webhook_url?: string;
 }
 
+export interface ActivityLog {
+  id: string;
+  action: string;
+  details: Record<string, any>;
+  timestamp: string;
+}
+
 export interface DocumentItem {
   id: string;
   filename: string;
@@ -54,8 +61,11 @@ export interface GraphNode {
   id: string;
   label: string;
   type: string;
+  description?: string;
   document_id: string | null;
+  document_name?: string;
   degree: number;
+  centrality?: number;
 }
 
 export interface GraphEdge {
@@ -69,7 +79,14 @@ export interface GraphEdge {
 export interface GraphResponse {
   nodes: GraphNode[];
   edges: GraphEdge[];
-  stats: { node_count: number; edge_count: number; density: number; connected_components: number };
+  stats: {
+    node_count: number;
+    edge_count: number;
+    density: number;
+    connected_components: number;
+    type_distribution: Record<string, number>;
+    top_hubs: { id: string; label: string; degree: number }[];
+  };
 }
 
 export interface Citation {
@@ -205,6 +222,7 @@ export const authApi = {
   me: () => api.get<User>("/api/auth/me"),
   updateProfile: (data: { full_name?: string; n8n_webhook_url?: string }) =>
     api.put<User>("/api/auth/profile", data),
+  activity: () => api.get<ActivityLog[]>("/api/auth/activity"),
 };
 
 export const documentsApi = {

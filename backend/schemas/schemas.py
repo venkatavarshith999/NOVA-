@@ -36,6 +36,16 @@ class UserUpdate(BaseModel):
     n8n_webhook_url: Optional[str] = None
 
 
+class ActivityLogOut(BaseModel):
+    id: str
+    action: str
+    details: dict
+    timestamp: dt.datetime
+
+    class Config:
+        from_attributes = True
+
+
 # ---------- Documents ----------
 class DocumentOut(BaseModel):
     id: str
@@ -61,7 +71,9 @@ class GraphNode(BaseModel):
     id: str
     label: str
     type: str
+    description: Optional[str] = ""
     document_id: Optional[str] = None
+    document_name: Optional[str] = ""
     degree: int = 0
 
 

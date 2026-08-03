@@ -10,7 +10,7 @@ from fastapi import APIRouter, Depends, UploadFile, File, HTTPException, WebSock
 from sqlalchemy.orm import Session
 
 from database import get_db, SessionLocal
-from models.models import User, Document, Chunk, Entity, Relationship
+from models.models import User, Document, Chunk, Entity, Relationship, ActivityLog
 from schemas.schemas import DocumentOut
 from auth.security import get_current_user, decode_token
 from config import get_settings
@@ -162,6 +162,10 @@ async def upload_documents(files: List[UploadFile] = File(...), user: User = Dep
         db.commit()
         db.refresh(doc)
         created.append(doc)
+
+        activity = ActivityLog(user_id=user.id, action="upload_document", details={"filename": f.filename, "document_id": doc.id})
+        db.add(activity)
+        db.commit()
 
         asyncio.create_task(process_document(doc.id, user.id))
 

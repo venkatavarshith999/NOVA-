@@ -229,20 +229,30 @@ function ReportViewer({ data }: { report: ReportItem; data: ReportDetail; onClos
       <!DOCTYPE html><html><head>
       <title>${data.title}</title>
       <style>
-        body { font-family: 'Segoe UI', sans-serif; color: #1a1a2e; background: white; padding: 40px; max-width: 800px; margin: 0 auto; }
-        h1 { color: #1a1a2e; border-bottom: 3px solid #7c3aed; padding-bottom: 12px; }
-        h2 { color: #374151; border-bottom: 1px solid #e5e7eb; padding-bottom: 8px; margin-top: 32px; }
-        h3 { color: #4b5563; margin-top: 16px; }
-        .meta { color: #6b7280; font-size: 13px; margin-bottom: 24px; }
-        .badge { display: inline-block; padding: 2px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; text-transform: uppercase; }
-        .high { background: #fee2e2; color: #dc2626; }
-        .medium { background: #fef3c7; color: #d97706; }
-        .low { background: #dbeafe; color: #2563eb; }
-        .critical { background: #fee2e2; color: #dc2626; }
-        .score { font-size: 48px; font-weight: 900; color: #7c3aed; }
-        .card { border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px; margin-bottom: 12px; }
-        ul { padding-left: 20px; }
-        @media print { body { padding: 20px; } }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+        body { font-family: 'Inter', sans-serif; color: #0f172a; background: white; padding: 50px; max-width: 900px; margin: 0 auto; line-height: 1.6; }
+        h1 { color: #0f172a; border-bottom: 4px solid #7c3aed; padding-bottom: 16px; font-size: 36px; font-weight: 800; letter-spacing: -0.02em; margin-bottom: 24px; }
+        h2 { color: #1e293b; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px; margin-top: 40px; font-size: 24px; font-weight: 700; }
+        h3 { color: #334155; margin-top: 24px; font-size: 18px; font-weight: 600; }
+        p { margin-top: 12px; margin-bottom: 12px; font-size: 15px; color: #475569; }
+        .meta { color: #64748b; font-size: 14px; margin-bottom: 32px; padding: 20px; background: #f8fafc; border-radius: 12px; border: 1px solid #e2e8f0; }
+        .meta strong { color: #334155; font-size: 18px; }
+        .badge { display: inline-block; padding: 4px 12px; border-radius: 24px; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; }
+        .high { background: #fef2f2; color: #ef4444; border: 1px solid #fecaca; }
+        .medium { background: #fffbeb; color: #f59e0b; border: 1px solid #fde68a; }
+        .low { background: #eff6ff; color: #3b82f6; border: 1px solid #bfdbfe; }
+        .critical { background: #fef2f2; color: #ef4444; border: 1px solid #fecaca; }
+        .score { font-size: 56px; font-weight: 800; color: #7c3aed; line-height: 1; }
+        .score-container { display: flex; align-items: center; gap: 24px; margin: 24px 0; padding: 32px; background: #faf5ff; border-radius: 16px; border: 1px solid #f3e8ff; }
+        .card { border: 1px solid #e2e8f0; border-radius: 12px; padding: 24px; margin-bottom: 16px; background: #ffffff; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+        .card h3 { margin-top: 0; display: flex; align-items: center; gap: 12px; }
+        ul { padding-left: 24px; margin-top: 12px; margin-bottom: 12px; }
+        li { margin-bottom: 8px; font-size: 15px; color: #475569; }
+        @media print { 
+          body { padding: 0; max-width: 100%; }
+          .card { break-inside: avoid; box-shadow: none; border: 1px solid #cbd5e1; }
+          h2 { page-break-after: avoid; }
+        }
       </style>
       </head><body>
       <h1>Enterprise Compliance Report</h1>
@@ -256,9 +266,13 @@ function ReportViewer({ data }: { report: ReportItem; data: ReportDetail; onClos
       ${c.executive_summary ? `<h2>Executive Summary</h2><p>${c.executive_summary.replace(/\n/g, "<br>")}</p>` : ""}
 
       <h2>Compliance Score</h2>
-      <p><span class="score">${c.compliance_score ?? "N/A"}%</span>&nbsp;&nbsp;
-      <span class="badge ${c.risk_level ?? "low"}">${(c.risk_level ?? "N/A").toUpperCase()} RISK</span></p>
-      <p>Entities: ${data.entity_count} &nbsp;|&nbsp; Relationships: ${data.relationship_count} &nbsp;|&nbsp; Graph Nodes: ${c.graph_stats?.total_nodes ?? 0}</p>
+      <div class="score-container">
+        <span class="score">${c.compliance_score ?? "N/A"}%</span>
+        <div>
+          <span class="badge ${c.risk_level ?? "low"}">${(c.risk_level ?? "N/A").toUpperCase()} RISK</span>
+          <p style="margin:4px 0 0;font-size:13px;color:#64748b">Entities: ${data.entity_count} &nbsp;|&nbsp; Relationships: ${data.relationship_count} &nbsp;|&nbsp; Graph Nodes: ${c.graph_stats?.total_nodes ?? 0}</p>
+        </div>
+      </div>
 
       ${c.risks?.length ? `<h2>Compliance Risks (${data.risk_count})</h2>${c.risks.map((r) => `<div class="card"><h3><span class="badge ${r.severity}">${r.severity.toUpperCase()}</span> ${r.title}</h3><p>${r.description}</p><p><strong>Recommendation:</strong> ${r.recommendation}</p></div>`).join("")}` : ""}
 

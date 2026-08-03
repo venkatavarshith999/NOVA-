@@ -12,6 +12,7 @@ import Analytics from "./pages/Analytics";
 import Settings from "./pages/Settings";
 import Reports from "./pages/Reports";
 import Compare from "./pages/Compare";
+import History from "./pages/History";
 import { NotFound } from "./pages/ErrorPages";
 import ProtectedRoute from "./components/ProtectedRoute";
 import ToastHost from "./components/ToastHost";
@@ -40,6 +41,7 @@ export default function App() {
               <Route path="/analytics" element={<Analytics />} />
               <Route path="/reports" element={<Reports />} />
               <Route path="/compare" element={<Compare />} />
+              <Route path="/history" element={<History />} />
               <Route path="/settings" element={<Settings />} />
             </Route>
 

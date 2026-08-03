@@ -2,7 +2,7 @@ import { type ReactNode, useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard, FileStack, Share2, MessageSquareText, BarChart3, Settings,
-  LogOut, Menu, X, Search, FileBarChart, GitCompareArrows,
+  LogOut, Menu, X, Search, FileBarChart, GitCompareArrows, History,
 } from "lucide-react";
 import Logo from "./Logo";
 import ConstellationBackground from "./ConstellationBackground";
@@ -16,6 +16,7 @@ const NAV_ITEMS = [
   { to: "/analytics", label: "Analytics", icon: BarChart3 },
   { to: "/reports", label: "Reports", icon: FileBarChart },
   { to: "/compare", label: "Compare", icon: GitCompareArrows },
+  { to: "/history", label: "History", icon: History },
   { to: "/settings", label: "Settings", icon: Settings },
 ];
 

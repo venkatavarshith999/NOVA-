@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from database import get_db
-from models.models import User, Question, Answer, Document
+from models.models import User, Question, Answer, Document, ActivityLog
 from auth.security import get_current_user
 from schemas.schemas import AskRequest, AskResponse, Citation, HistoryItem
 from rag.pipeline import retrieve, generate_answer
@@ -39,6 +39,10 @@ async def ask(payload: AskRequest, user: User = Depends(get_current_user), db: S
     db.add(answer_row)
     db.commit()
     db.refresh(answer_row)
+
+    activity = ActivityLog(user_id=user.id, action="ask_question", details={"question": payload.question})
+    db.add(activity)
+    db.commit()
 
     return AskResponse(
         question_id=question_row.id,

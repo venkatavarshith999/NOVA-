@@ -135,3 +135,15 @@ class Report(Base):
     created_at = Column(DateTime, default=dt.datetime.utcnow)
 
     owner = relationship("User")
+
+
+class ActivityLog(Base):
+    __tablename__ = "activity_logs"
+
+    id = Column(String, primary_key=True, default=gen_id)
+    user_id = Column(String, ForeignKey("users.id"))
+    action = Column(String, nullable=False)  # login, upload_document, generate_report, ask_question
+    details = Column(JSON, default=dict)
+    timestamp = Column(DateTime, default=dt.datetime.utcnow)
+
+    user = relationship("User")

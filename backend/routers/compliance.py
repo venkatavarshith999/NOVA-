@@ -16,7 +16,7 @@ from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 
 from database import get_db
-from models.models import User, Document, Entity, Relationship, Chunk, Report
+from models.models import User, Document, Entity, Relationship, Chunk, Report, ActivityLog
 from auth.security import get_current_user
 from graph.graph_builder import (
     build_graph_for_user, detect_compliance_risks, impact_analysis,
@@ -27,7 +27,7 @@ from schemas.schemas import (
     ImpactAnalysisRequest, ImpactAnalysisResponse, ImpactNode,
     ReportGenerateRequest, ReportOut,
 )
-from llm.gemini_client import generate_content, GeminiError
+from llm.gemini_client import generate_content, generate_with_fallback, GeminiError, GeminiRateLimitError
 
 router = APIRouter(prefix="/api", tags=["compliance"])
 logger = logging.getLogger("nova.compliance")
@@ -87,7 +87,7 @@ async def summarize_document(doc_id: str, user: User = Depends(get_current_user)
 # ---------- Document Comparison ----------
 
 @router.post("/documents/compare", response_model=CompareResponse)
-def compare_documents(payload: CompareRequest, user: User = Depends(get_current_user),
+async def compare_documents(payload: CompareRequest, user: User = Depends(get_current_user),
                        db: Session = Depends(get_db)):
     doc_a = db.query(Document).filter(Document.id == payload.document_id_a, Document.owner_id == user.id).first()
     doc_b = db.query(Document).filter(Document.id == payload.document_id_b, Document.owner_id == user.id).first()
@@ -127,13 +127,33 @@ def compare_documents(payload: CompareRequest, user: User = Depends(get_current_
     total_ents = len(set(names_a.keys()) | set(names_b.keys()))
     overlap = len(shared_keys) / total_ents if total_ents > 0 else 0.0
 
-    summary = (
+    heuristic_summary = (
         f"Compared '{doc_a.filename}' and '{doc_b.filename}'. "
         f"Found {len(shared)} shared entities, {len(unique_a)} unique to document A, "
         f"and {len(unique_b)} unique to document B. "
         f"Entity overlap: {overlap:.0%}. "
         f"{len(rel_diffs)} relationship differences detected."
     )
+
+    try:
+        prompt = (
+            f"Write a concise comparison summary for two compliance documents: '{doc_a.filename}' and '{doc_b.filename}'.\n"
+            f"Here are the stats:\n"
+            f"Shared entities: {len(shared)}\n"
+            f"Unique to {doc_a.filename}: {len(unique_a)} (e.g. {', '.join([e['name'] for e in unique_a[:5]])})\n"
+            f"Unique to {doc_b.filename}: {len(unique_b)} (e.g. {', '.join([e['name'] for e in unique_b[:5]])})\n"
+            f"Relationship differences: {len(rel_diffs)}\n\n"
+            f"Explain what these differences might mean for a compliance analyst in 2-3 sentences."
+        )
+        ai_summary, used_fallback = await generate_with_fallback(
+            prompt=prompt,
+            fallback_text=heuristic_summary,
+            system_instruction="You are an expert compliance analyst comparing document extracted entities.",
+            temperature=0.3,
+        )
+        summary = ai_summary
+    except Exception:
+        summary = heuristic_summary
 
     return CompareResponse(
         document_a={"id": doc_a.id, "filename": doc_a.filename,
@@ -464,11 +484,10 @@ async def generate_report(payload: ReportGenerateRequest, background_tasks: Back
         )
     executive_summary = "".join(exec_summary_parts)
 
-    # Try Gemini for a better executive summary
-    try:
-        entity_names = [e.name for e in entities[:30]]
-        risk_titles = [r["title"] for r in risks[:10]]
-        prompt = (
+    # Generate executive summary — gracefully falls back if API is rate-limited
+    exec_summary_fallback = executive_summary
+    ai_summary, used_fallback = await generate_with_fallback(
+        prompt=(
             f"Write a concise executive summary (3-4 paragraphs) for an Enterprise Compliance Report.\n\n"
             f"Documents analyzed: {len(docs)}\n"
             f"Entities extracted: {len(entities)} (types: {', '.join(entity_breakdown.keys())})\n"
@@ -476,22 +495,21 @@ async def generate_report(payload: ReportGenerateRequest, background_tasks: Back
             f"Compliance score: {compliance_score}%\n"
             f"Risk level: {risk_level}\n"
             f"High-severity risks: {high_count}\n"
-            f"Key entities: {', '.join(entity_names[:15])}\n"
-            f"Risk titles: {', '.join(risk_titles[:5])}\n"
+            f"Key entities: {', '.join(e.name for e in entities[:15])}\n"
+            f"Risk titles: {', '.join(r['title'] for r in risks[:5])}\n"
             f"Missing policy areas: {', '.join(m['area'] for m in missing_policies[:5])}\n"
             f"Regulations identified: {', '.join(r['name'] for r in key_regulations[:5])}\n\n"
             f"Be professional and concise. Focus on actionable insights for management."
-        )
-        ai_summary = await generate_content(
-            prompt,
-            system_instruction="You are an enterprise compliance analyst writing a professional audit report executive summary. Be factual, concise, and actionable.",
-            temperature=0.3,
-        )
+        ),
+        fallback_text=exec_summary_fallback,
+        system_instruction="You are an enterprise compliance analyst writing a professional audit report executive summary. Be factual, concise, and actionable.",
+        temperature=0.3,
+    )
+    if not used_fallback:
         executive_summary = ai_summary
-    except Exception as e:
-        logger.error(f"AI API failed during report generation: {e}")
-        from fastapi import HTTPException
-        raise HTTPException(status_code=503, detail=f"Failed to generate AI executive summary: {str(e)}")
+    else:
+        logger.info("AI summary unavailable, using heuristic executive summary.")
+        # Use the already constructed fallback `executive_summary` instead of raising
 
     content = {
         "generated_at": dt.datetime.utcnow().isoformat(),
@@ -529,6 +547,10 @@ async def generate_report(payload: ReportGenerateRequest, background_tasks: Back
     db.add(report)
     db.commit()
     db.refresh(report)
+
+    activity = ActivityLog(user_id=user.id, action="generate_report", details={"report_type": payload.report_type, "title": title, "report_id": report.id})
+    db.add(activity)
+    db.commit()
 
     # Trigger n8n Webhook if configured
     if user.n8n_webhook_url:
